@@ -7,11 +7,14 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_LINE_LENGTH 1024 // change this later according to use case
+#define MAX_LINE_LENGTH 2048 // change this later according to use case
 #define MAX_FIELDS 100       // change this later according to use case
 
 #define MAX_TASK_LENGTH 100
 #define MAX_TASKS 1024
+
+#define MAX_EVENT_HEAD_SIZE 256
+#define MAX_EVENT_DESC_SIZE 1024
 
 /*
     THINGS IMPROVED:
@@ -87,7 +90,7 @@ void clear_console()
     system("clear");
 #endif
 }
-void read_csv(const char *filename)
+void print_csv(const char *filename)
 {
     FILE *file = fopen(filename, "r");
     if (file == NULL)
@@ -109,13 +112,11 @@ void read_csv(const char *filename)
             token = strtok(NULL, ",");
         }
 
-            // Print the separator line
-            for (int i = 0; i < field_count; i++)
-            {
-                printf("|_________________");
-            }
-            printf("|\n");
-        // }
+        for (int i = 0; i < field_count; i++)
+        {
+            printf("|_________________");
+        }
+        printf("|\n");
 
         for (int i = 0; i < field_count; i++)
         {
@@ -126,6 +127,13 @@ void read_csv(const char *filename)
     }
 
     fclose(file);
+}
+void clear_buffer()
+{
+    int c;
+    /* discard all characters up to and including newline */
+    while ((c = getchar()) != '\n' && c != EOF)
+        ;
 }
 bool is_leap_year(int year)
 {
@@ -184,22 +192,9 @@ void print_calendar(int month, int year)
     printf("\n");
 }
 
-void show_calendar_menu()
-{
-    // clear_console();
-    printf("------------------------MENU------------------------\n\n");
-    printf("1. To look at another month\n");
-    printf("2. To look at all your tasks on a particular date\n");
-    printf("3. To add new tasks\n");
-    printf("4. To delete a particualr task\n");
-    printf("5. To go back to previous menu\n\n");
-    printf("----------------------------------------------------\n\n");
-    printf("Enter your choice: ");
-}
-
 void show_main_menu()
 {
-    // clear_console();
+    clear_console();
     printf("------------------------MENU------------------------\n\n");
     printf("1. Calendar\n2. Notes\n3. Events\n4. Tasks\n5. Exit\n");
     printf("----------------------------------------------------\n\n");
@@ -207,10 +202,34 @@ void show_main_menu()
     printf("Enter your choice: ");
 }
 
-void wait() {
-    char temp[2];
-    printf("Press Enter to proceed\n");
-    fgets(temp, 2, stdin);
+void show_calendar_menu()
+{
+    printf("------------------------MENU------------------------\n\n");
+    printf("1. To look at another month\n");
+    // printf("2. To look at all your tasks on a particular date\n");
+    // printf("3. To add new tasks at in current month\n");
+    // printf("4. To delete a particualr task in current month\n");
+    printf("2. To go back to previous menu\n\n");
+    printf("----------------------------------------------------\n\n");
+    printf("Enter your choice: ");
+}
+
+void show_events_menu()
+{
+    printf("------------------------MENU------------------------\n\n");
+    printf("1. Show all events\n");
+    printf("2. Add new event\n");
+    printf("3. Delete event\n");
+    printf("----------------------------------------------------\n\n");
+    printf("Enter your choice: ");
+}
+
+void wait() // make it better by making it take a string or char instead
+{
+    int temp;
+    printf("Enter any number to proceed\n");
+    scanf("%d", &temp);
+    clear_buffer();
 }
 
 void calendar()
@@ -225,10 +244,14 @@ void calendar()
     int current_year = (tm_local->tm_year) + 1900; // for some reason tm_year is 1900 less than actual year :/
 
     print_calendar(current_month, current_year);
+    wait();
+
+    clear_console();
     show_calendar_menu();
 
     int choice;
     scanf("%d", &choice);
+    clear_buffer();
 
     if (choice == 1)
     {
@@ -236,56 +259,108 @@ void calendar()
         printf("Enter month and year: ");
         int mm, yyyy;
         scanf("%d%d", &mm, &yyyy);
+        clear_buffer();
         print_calendar(mm, yyyy);
         wait();
     }
-
-    if (choice == 2)
-    {   
-        clear_console();
-        read_csv("tasks.csv");
-        getchar();
-    }
-
-    // char date[8]; // in dd/mm/yy format (1 byte each char)
-    // FILE *tasks_file_ptr = fopen("tasks.csv", "r");
-    // FILE *events_file_ptr = fopen("events.csv", "r");
-
-    // printf("Enter date(dd/mm/yy): ");
-    // fflush(stdin);
-    // fgets(date, 8, stdin);
-
-    // if (tasks_file_ptr == NULL)
-    //     throw_error();
-    // if (events_file_ptr == NULL)
-    //     throw_error();
-
-    // if (is_file_empty("tasks.csv"))
-    //     printf("No tasks");
 }
+
 void notes()
 {
     clear_console();
     int choice;
     printf("Enter 1 to see all notes\n");
     printf("Enter 2 to go back\n");
-    if (choice == 1)
-    {
-    }
+    wait();
 }
+
 void events()
 {
-    return;
+    clear_console();
+    show_events_menu();
+    int choice;
+    scanf("%d", &choice);
+    clear_buffer();
+    if (choice == 1)
+    {
+        print_csv("events.csv");
+        wait();
+    }
+    if (choice == 2)
+    {
+        char event_date[11];
+        printf("Enter Date: ");
+        if (fgets(event_date, 11, stdin) == NULL)
+        {
+            throw_error();
+        }
+        else
+        {
+            char *ptr = strchr(event_date, '\n');
+            if (ptr) // ptr != NULL
+            {
+                *ptr = '\0';
+            }
+        }
+        fflush(stdin);
+        clear_buffer();
+        puts(event_date);
+
+        char event_heading[MAX_EVENT_HEAD_SIZE];
+        printf("Enter Event Heading: ");
+        if (fgets(event_heading, MAX_EVENT_HEAD_SIZE, stdin) == NULL)
+        {
+            throw_error();
+        }
+        else
+        {
+            char *ptr = strchr(event_heading, '\n');
+            if (ptr)
+            {
+                *ptr = '\0';
+            }
+        }
+        fflush(stdin);
+        clear_buffer();
+        puts(event_heading);
+
+        char event_desc[MAX_EVENT_DESC_SIZE];
+        printf("Enter Event Description: ");
+        if (fgets(event_desc, MAX_EVENT_DESC_SIZE, stdin) == NULL)
+        {
+            throw_error();
+        }
+        else
+        {
+            char *ptr = strchr(event_desc, MAX_EVENT_DESC_SIZE);
+            if (ptr)
+            {
+                *ptr = '\0';
+            }
+        }
+        fflush(stdin);
+        clear_buffer();
+        puts(event_desc);
+
+        FILE *events_file = fopen("events.csv", "a+");
+        fprintf(events_file, "%s, %s, %s", event_date, event_heading, event_desc);
+    }
+    if (choice == 3)
+    {
+        printf("Enter Event Name to Delete ");
+    }
 }
 void tasks()
 {
-    return;
+    clear_console();
+    print_csv("tasks.csv");
+    wait();
 }
 
 int main()
 {
     clear_console();
-    read_csv("data.csv");
+    print_csv("data.csv");
     clear_console();
 
     while (1)
@@ -296,6 +371,7 @@ int main()
         show_main_menu();
 
         scanf("%hhd", &choice);
+        clear_buffer();
 
         printf("%d\n", choice);
 
