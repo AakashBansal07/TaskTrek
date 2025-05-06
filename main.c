@@ -303,19 +303,36 @@ void printAllTodo()
 void markAsComplete()
 {
     int todoId;
-    printf("Enter the ID of todo \n>>");
-    scanf("%d", &todoId);
+    printf("\n====== Mark Todo as Complete ======\n");
+
+    printf("Enter the ID of the todo:\n>> ");
+    if (scanf("%d", &todoId) != 1) {
+        // Clear the input buffer
+        while (getchar() != '\n');
+        printf("Invalid input. Please enter a number.\n");
+        return;
+    }
+
+    // Adjust index (if IDs are shown as 1-based to user)
     todoId--;
-    if (todoId < 0 || todoId > tLength)
+
+    if (todoId < 0 || todoId >= tLength)
     {
-        printf("Invalid todo id 😑\n");
+        printf("Invalid todo ID 😑\n");
+        return;
+    }
+
+    if (todos[todoId].isCompleted)
+    {
+        printf("Todo \"%s\" is already completed ✅\n", todos[todoId].title);
     }
     else
     {
         todos[todoId].isCompleted = true;
-        printf("Todo marked as completed \n");
+        printf("Todo \"%s\" marked as completed ✅\n", todos[todoId].title);
     }
 }
+
 void deleteTodo()
 {
     int todoId;
